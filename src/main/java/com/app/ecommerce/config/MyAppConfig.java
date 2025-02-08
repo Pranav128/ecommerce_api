@@ -11,15 +11,27 @@ public class MyAppConfig implements WebMvcConfigurer {
     @Value("${allowed.origins}")
     private String[] theAllowedOrigins;
 
+    @Value("${ALLOWED_ORIGINS}") // Inject from environment variable
+    private String allowedOrigins;
+
     @Value("${spring.data.rest.base-path}")
     private String basePath;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")  // Apply to all endpoints under /api
-                .allowedOrigins("*") // Allow from *all* origins (DANGEROUS FOR PRODUCTION)
-                .allowedMethods("*") // Allow all methods (GET, POST, PUT, DELETE, etc.)
-                .allowedHeaders("*"); // Allow all headers
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            String[] origins = allowedOrigins.split(","); // Handle multiple origins
+            registry.addMapping("/api/**")
+                    .allowedOrigins(origins)
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    .allowedHeaders("*");
+        } else {
+            // Handle the case where ALLOWED_ORIGINS is not set (e.g., development)
+            registry.addMapping("/api/**")
+                    .allowedOrigins("http://localhost:4200")  // Default for local dev
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    .allowedHeaders("*");
+        }
     }
 }
 
